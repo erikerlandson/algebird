@@ -29,6 +29,12 @@ class TDigest(
   private case class Cluster(centroid: Double, mass: Double, massUB: Double)
 
   /**
+   * Returns a new t-digest with value x included in its sketch; td + x is equivalent to
+   * td + (x, 1).
+   */
+  def +[N](x: N)(implicit num: Numeric[N]): TDigest = this.+((x, 1))
+
+  /**
    * Returns a new t-digest with new pair (x, w) included in its sketch.
    * This implements 'algorithm 1' from:
    * Computing Extremely Accurate Quantiles Using t-Digests
