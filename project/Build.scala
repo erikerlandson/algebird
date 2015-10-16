@@ -150,6 +150,7 @@ object AlgebirdBuild extends Build {
           Seq()
       }
     },
+    libraryDependencies += "org.apache.commons" % "commons-math3" % "3.5",
     sourceGenerators in Compile <+= sourceManaged in Compile map { outDir: File =>
       GenTupleAggregators.gen(outDir)
     }, addCompilerPlugin("org.scalamacros" % "paradise" % paradiseVersion cross CrossVersion.full)
@@ -164,7 +165,9 @@ object AlgebirdBuild extends Build {
         else
           Seq()
       }
-    }, addCompilerPlugin("org.scalamacros" % "paradise" % paradiseVersion cross CrossVersion.full)
+    },
+    libraryDependencies += "org.apache.commons" % "commons-math3" % "3.5",
+    addCompilerPlugin("org.scalamacros" % "paradise" % paradiseVersion cross CrossVersion.full)
   ).dependsOn(algebirdCore)
 
   lazy val algebirdBenchmark = module("benchmark").settings(JmhPlugin.projectSettings:_*).settings(
