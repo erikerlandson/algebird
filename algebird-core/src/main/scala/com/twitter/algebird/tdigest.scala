@@ -45,11 +45,8 @@ case class TDigest(
     if (s.nclusters < recluster) s
     else {
       // too many clusters: attempt to compress it by re-clustering
-      //println(s"n= ${s.nclusters}, reclustering...")
       val ds = scala.util.Random.shuffle(s.clusters.toVector)
-      val ss = ds.foldLeft(TDigest.empty(delta))((d, e) => d.update(e))
-      //println(s"   reclustered n= ${ss.nclusters}  delta= ${ss.delta}")
-      ss
+      ds.foldLeft(TDigest.empty(delta, recluster))((d, e) => d.update(e))
     }
   }
 
