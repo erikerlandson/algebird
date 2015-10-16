@@ -184,5 +184,5 @@ sealed trait TDigestMap extends NodeTD
 /** factory functions for TDigestMap */
 object TDigestMap {
   /** Obtain an empty TDigestMap instance */
-  def empty = new Inject with LNodeTD with TDigestMap
+  def empty: TDigestMap = new Inject with LNodeTD with TDigestMap
 }
