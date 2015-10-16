@@ -19,12 +19,11 @@ package com.twitter.algebird
 import map.TDigestMap
 
 /** A t-digest object */
-class TDigest(
-  val delta: Double,
-  val K: Double,
-  val n: Long,
-  val nclusters: Int,
-  val clusters: TDigestMap) {
+case class TDigest(
+  delta: Double,
+  recluster: Int,
+  nclusters: Int,
+  clusters: TDigestMap) {
 
   private case class Cluster(centroid: Double, mass: Double, massUB: Double)
 
@@ -42,11 +41,22 @@ class TDigest(
    * https://github.com/tdunning/t-digest/blob/master/docs/t-digest-paper/histo.pdf
    */
   def +[N1, N2](xw: (N1, N2))(implicit num1: Numeric[N1], num2: Numeric[N2]): TDigest = {
+    val s = this.update(xw)
+    if (s.nclusters < recluster) s
+    else {
+      // too many clusters: attempt to compress it by re-clustering
+      println(s"n= ${s.nclusters}, reclustering...")
+      val ds = scala.util.Random.shuffle(s.clusters.toVector)
+      val ss = ds.foldLeft(TDigest.empty(delta))((d, e) => d.update(e))
+      println(s"   reclustered n= ${ss.nclusters}  delta= ${ss.delta}")
+      ss
+    }
+  }
+
+  private def update[N1, N2](xw: (N1, N2))(implicit num1: Numeric[N1], num2: Numeric[N2]) = {
     val xn = num1.toDouble(xw._1)
     var wn = num2.toDouble(xw._2)
     require(wn > 0.0, "data weight must be > 0")
-
-    val nn = n + 1L
 
     // Get the current cluster nearest to incoming (xn)
     // Note: 'near' will have length 0,1, or 2:
@@ -57,7 +67,7 @@ class TDigest(
 
     if (near.isEmpty) {
       // our map is empty, so insert this pair as the first cluster
-      new TDigest(delta, K, nn, nclusters + 1, clusters + ((xn, wn)))
+      TDigest(delta, recluster, nclusters + 1, clusters + ((xn, wn)))
     } else {
       // compute upper bounds for cluster masses, from their quantile estimates
       var massPS = clusters.prefixSum(near.head._1, open = true)
@@ -65,7 +75,7 @@ class TDigest(
       val s = near.map {
         case (c, m) =>
           val q = (massPS + m / 2.0) / massTotal
-          val ub = 4.0 * nn.toDouble * delta * q * (1.0 - q)
+          val ub = massTotal * delta * q * (1.0 - q)
           massPS += m
           Cluster(c, m, ub)
       }
@@ -101,14 +111,8 @@ class TDigest(
       val clustNew = cmNew.foldLeft(clustDel)((c, p) => c.increment(p._1, p._2))
       val nc = nclusters - s.length + cmNew.length
 
-      if (nc.toDouble <= K / delta)
-        // return the updated t-digest
-        new TDigest(delta, K, nn, nc, clustNew)
-      else {
-        // too many clusters: compress it by re-clustering
-        val ds = scala.util.Random.shuffle(clustNew.toVector)
-        ds.foldLeft(TDigest.empty(1.0 / delta, K))((c, e) => c + e)
-      }
+      // return the updated t-digest
+      TDigest(delta, recluster, nc, clustNew)
     }
   }
 
@@ -123,22 +127,20 @@ object TDigest {
 
   /** return an empty t-digest */
   def empty(
-    deltaInv: Double = 100.0,
-    K: Double = 2.0) = {
-    require(deltaInv >= 1.0, s"deltaInv= $deltaInv")
-    require(K >= 1.0, s"K= $K")
-    new TDigest(1.0 / deltaInv, K, 0L, 0, TDigestMap.empty)
+    delta: Double = 0.5,
+    recluster: Int = 1000) = {
+    require(delta > 0.0, s"delta was not > 0")
+    TDigest(delta, recluster, 0, TDigestMap.empty)
   }
 
   /** return a t-digest constructed from some data */
-  def apply[N](
+  def sketch[N](
     data: TraversableOnce[N],
-    deltaInv: Double = 100.0,
-    K: Double = 2.0)(implicit num: Numeric[N]) = {
-    require(deltaInv >= 1.0, s"deltaInv= $deltaInv")
-    require(K >= 1.0, s"K= $K")
-    val td = data.foldLeft(empty(deltaInv, K))((c, e) => c + ((e, 1)))
+    delta: Double = 0.5,
+    recluster: Int = 1000)(implicit num: Numeric[N]) = {
+    require(delta > 0.0, s"delta was not > 0")
+    val td = data.foldLeft(empty(delta, recluster))((c, e) => c + ((e, 1)))
     val ds = scala.util.Random.shuffle(td.clusters.toVector)
-    ds.foldLeft(empty(deltaInv, K))((c, e) => c + e)
+    ds.foldLeft(empty(delta, recluster))((c, e) => c + e)
   }
 }
