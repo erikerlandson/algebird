@@ -29,12 +29,22 @@ object tree {
   import com.twitter.algebird.maps.prefixsum.tree._
   import com.twitter.algebird.maps.nearest.tree._
 
+  /** Base class of tree node for a TDigestMap */
   trait NodeTD extends NodePS[Double, Double, Double]
     with NodeInc[Double, Double] with NodeNearMap[Double, Double] {
 
+    /**
+     * Obtain a "mass cover": two adjacent nodes in the tree such that the cumulative mass
+     * of the left node is <= (m) and the cumulative mass of the right node is > (m)
+     * @param m The target mass to cover between two adjacent nodes
+     * @return a Cover instance with the left and right covering tree nodes.  If the (m)
+     * was < the mass of the left-most tree node, the left cover value will be None.  Similarly
+     * if the mass was >= the cumulative mass of the right-most node (equivalent to sum of all
+     * node masses in the tree), then the right cover value will be None.
+     */
     final def mCover(m: Double) = mcov(m, 0.0, Cover[INodeTD](None, None))
 
-    def mcov(m: Double, psum: Double, cov: Cover[INodeTD]): Cover[INodeTD]
+    private[tree] def mcov(m: Double, psum: Double, cov: Cover[INodeTD]): Cover[INodeTD]
   }
 
   trait LNodeTD extends NodeTD
@@ -76,6 +86,7 @@ object infra {
   import com.twitter.algebird.maps.redblack.tree._
   import com.twitter.algebird.maps.ordered.tree.DataMap
 
+  /** Dependency injection class for TDigestMap */
   class Inject {
     // Typeclasses corresponding to "regular real numbers":
     val keyOrdering = implicitly[Numeric[Double]]
@@ -107,6 +118,10 @@ object infra {
 
 import infra._
 
+/**
+ * The tree-backed map object a TDigest uses to store and update its clusters.  TDigestMap
+ * inherits functionality for value increment, prefix-sum and nearest-neighbor queries.
+ */
 sealed trait TDigestMap extends NodeTD
   with IncrementMapLike[Double, Double, INodeTD, TDigestMap]
   with PrefixSumMapLike[Double, Double, Double, INodeTD, TDigestMap]
@@ -120,6 +135,7 @@ sealed trait TDigestMap extends NodeTD
     (m1, m2)
   }
 
+  /** Compute the CDF for a value, using piece-wise linear between clusters */
   def cdf[N](xx: N)(implicit num: Numeric[N]) = {
     val x = num.toDouble(xx)
     this.coverR(x) match {
@@ -132,6 +148,10 @@ sealed trait TDigestMap extends NodeTD
     }
   }
 
+  /**
+   * Compute the inverse-CDF from a given quantile on interval [0, 1], using piecewise linear
+   * interpolation between clusters
+   */
   def cdfInverse[N](qq: N)(implicit num: Numeric[N]) = {
     def cdfI(m: Double, c1: Double, tm1: Double, c2: Double, tm2: Double) = {
       val (m1, m2) = m1m2(c1, tm1, c2, tm2)
@@ -161,6 +181,8 @@ sealed trait TDigestMap extends NodeTD
       ")"
 }
 
+/** factory functions for TDigestMap */
 object TDigestMap {
+  /** Obtain an empty TDigestMap instance */
   def empty = new Inject with LNodeTD with TDigestMap
 }

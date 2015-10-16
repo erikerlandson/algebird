@@ -18,7 +18,12 @@ package com.twitter.algebird
 
 import tdmap.TDigestMap
 
-/** A t-digest object */
+/**
+ * A t-digest sketch of sampled numeric data, as described in:
+ * Computing Extremely Accurate Quantiles Using t-Digests,
+ * Ted Dunning and Otmar Ertl,
+ * https://github.com/tdunning/t-digest/blob/master/docs/t-digest-paper/histo.pdf
+ */
 case class TDigest(
   delta: Double,
   recluster: Int,
@@ -30,14 +35,18 @@ case class TDigest(
   /**
    * Returns a new t-digest with value x included in its sketch; td + x is equivalent to
    * td + (x, 1).
+   * @param x The numeric data value to include in the sketch
+   * @return the updated sketch
    */
   def +[N](x: N)(implicit num: Numeric[N]): TDigest = this.+((x, 1))
 
   /**
    * Returns a new t-digest with new pair (x, w) included in its sketch.
-   * This implements 'algorithm 1' from:
-   * Computing Extremely Accurate Quantiles Using t-Digests
-   * Ted Dunning and Otmar Ertl
+   * @param xw A pair (x, w) where x is the numeric value and w is its weight
+   * @return the updated sketch
+   * @note This implements 'algorithm 1' from:
+   * Computing Extremely Accurate Quantiles Using t-Digests,
+   * Ted Dunning and Otmar Ertl,
    * https://github.com/tdunning/t-digest/blob/master/docs/t-digest-paper/histo.pdf
    */
   def +[N1, N2](xw: (N1, N2))(implicit num1: Numeric[N1], num2: Numeric[N2]): TDigest = {
@@ -50,6 +59,8 @@ case class TDigest(
     }
   }
 
+  // This is most of 'algorithm 1', except for re-clustering which is factored out to avoid
+  // recursive calls during a reclustering phase
   private def update[N1, N2](xw: (N1, N2))(implicit num1: Numeric[N1], num2: Numeric[N2]) = {
     val xn = num1.toDouble(xw._1)
     var wn = num2.toDouble(xw._2)
@@ -113,10 +124,24 @@ case class TDigest(
     }
   }
 
-  def cdf[N](xx: N)(implicit num: Numeric[N]) = clusters.cdf(xx)
-  def cdfInverse[N](qq: N)(implicit num: Numeric[N]) = clusters.cdfInverse(qq)
+  /**
+   * Compute a cumulative probability (CDF) for a numeric value, from the estimated probability
+   * distribution represented by this t-digest sketch.
+   * @param x a numeric value
+   * @return the cumulative probability that a random sample from the distribution is <= x
+   */
+  def cdf[N](x: N)(implicit num: Numeric[N]) = clusters.cdf(x)
+
+  /**
+   * Compute the inverse cumulative probability (inverse-CDF) for a quantile value, from the
+   * estimated probability distribution represented by this t-digest sketch.
+   * @param q a quantile value.  The value of q is expected to be on interval [0, 1]
+   * @return the value x such that cdf(x) = q
+   */
+  def cdfInverse[N](q: N)(implicit num: Numeric[N]) = clusters.cdfInverse(q)
 }
 
+/** Factory functions for TDigest */
 object TDigest {
   import scala.language.reflectiveCalls
   import com.twitter.algebird.Monoid
