@@ -154,17 +154,6 @@ sealed trait TDigestMap extends NodeTD
     }
   }
 
-  def pdf[N](xx: N)(implicit num: Numeric[N]) = {
-    val x = num.toDouble(xx)
-    this.coverR(x) match {
-      case Cover(Some((c1, tm1)), Some((c2, tm2))) => {
-        val (m1, m2) = m1m2(c1, tm1, c2, tm2)
-        (m2 - m1) / (c2 - c1) / this.sum
-      }
-      case _ => 0.0
-    }
-  }
-
   override def toString =
     "TDigestMap(" +
       iterator.zip(prefixSumsIterator())

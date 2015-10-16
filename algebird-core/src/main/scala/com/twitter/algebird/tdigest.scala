@@ -118,7 +118,6 @@ case class TDigest(
 
   def cdf[N](xx: N)(implicit num: Numeric[N]) = clusters.cdf(xx)
   def cdfInverse[N](qq: N)(implicit num: Numeric[N]) = clusters.cdfInverse(qq)
-  def pdf[N](xx: N)(implicit num: Numeric[N]) = clusters.pdf(xx)
 }
 
 object TDigest {
