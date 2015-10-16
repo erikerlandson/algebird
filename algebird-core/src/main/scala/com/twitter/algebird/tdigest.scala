@@ -16,7 +16,7 @@ limitations under the License.
 
 package com.twitter.algebird
 
-import map.TDigestMap
+import tdmap.TDigestMap
 
 /** A t-digest object */
 case class TDigest(

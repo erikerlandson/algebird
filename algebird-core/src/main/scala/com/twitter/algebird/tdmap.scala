@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package com.twitter.algebird.map
+package com.twitter.algebird.tdmap
 
 import math.Numeric
 
