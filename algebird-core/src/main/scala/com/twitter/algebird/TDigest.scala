@@ -241,8 +241,8 @@ class TDigestMonoid(delta: Double = TDigest.deltaDefault) extends Monoid[TDigest
  * @tparam N the expected type of numeric input data
  */
 class TDigestAggregator[N](delta: Double = TDigest.deltaDefault)(implicit num: Numeric[N])
-  extends Aggregator[N, TDigest, TDigest] {
-  def semigroup = TDigest.monoid(delta)
+  extends MonoidAggregator[N, TDigest, TDigest] {
+  def monoid = TDigest.monoid(delta)
   def prepare(x: N) = TDigest.prepare(x, delta)
   def present(td: TDigest) = td
 }
