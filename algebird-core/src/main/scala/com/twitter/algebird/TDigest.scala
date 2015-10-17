@@ -203,4 +203,46 @@ object TDigest {
     val ds = scala.util.Random.shuffle(td.clusters.toVector)
     ds.foldLeft(empty(delta))((c, e) => c + e)
   }
+
+  /**
+   * Obtain a TDigest monoid instance
+   * @param delta The TDigest sketch resolution parameter
+   * @return a TDigest monoid
+   */
+  def monoid(delta: Double = deltaDefault) = new TDigestMonoid(delta)
+
+  /**
+   * Obtain a TDigest aggregator instance
+   * @tparam N The type of numeric data expected
+   * @param delta The TDigest sketch resolution parameter
+   * @return a TDigest aggregator
+   */
+  def aggregator[N](delta: Double = deltaDefault)(implicit num: Numeric[N]) =
+    new TDigestAggregator[N](delta)
+
+  /** Try to add a bit of efficiency to wasteful construction of t-digest objects for each input */
+  private[algebird] def prepare[N](x: N, delta: Double = deltaDefault)(implicit num: Numeric[N]) =
+    TDigest(delta, 1, TDigestMap.empty + ((num.toDouble(x), 1.0)))
+}
+
+/** The Monoid type class for TDigest objects */
+class TDigestMonoid(delta: Double = TDigest.deltaDefault) extends Monoid[TDigest] {
+  val zero = TDigest.empty(delta)
+
+  def plus(ltd: TDigest, rtd: TDigest) = {
+    // this is equivalent to ltd ++ rtd, but preserves the monoid delta
+    val ds = scala.util.Random.shuffle(ltd.clusters.toVector ++ rtd.clusters.toVector)
+    ds.foldLeft(TDigest.empty(delta))((d, e) => d + e)
+  }
+}
+
+/**
+ * Aggregator subclass for sketching data using TDigest
+ * @tparam N the expected type of numeric input data
+ */
+class TDigestAggregator[N](delta: Double = TDigest.deltaDefault)(implicit num: Numeric[N])
+  extends Aggregator[N, TDigest, TDigest] {
+  def semigroup = TDigest.monoid(delta)
+  def prepare(x: N) = TDigest.prepare(x, delta)
+  def present(td: TDigest) = td
 }
