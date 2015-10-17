@@ -234,7 +234,7 @@ object TDigestMonoid {
     if (ltd.nclusters <= 1 && rtd.nclusters > 1) plus(rtd, ltd, delta)
     else if (rtd.nclusters == 0) ltd
     else if (rtd.nclusters == 1) {
-      // handle the singleton RHS case specially to prevent quadratic catastrophe when 
+      // handle the singleton RHS case specially to prevent quadratic catastrophe when
       // it is being used in the Aggregator use case
       val d = rtd.clusters.asInstanceOf[tdmap.tree.INodeTD].data
       ltd + ((d.key, d.value))
