@@ -28,7 +28,6 @@ class TDigestTest extends FlatSpec with Matchers {
 
   val ss = 100000
   val delta = 50.0 / 1000
-  val recluster = 10000
 
   val maxD = 0.05
   val maxDI = 0.05
@@ -38,10 +37,7 @@ class TDigestTest extends FlatSpec with Matchers {
 
     dist.reseedRandomGenerator(seed)
 
-    val td = TDigest.sketch(
-      Iterator.fill(ss) { dist.sample },
-      delta = delta,
-      recluster = recluster)
+    val td = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
 
     val xmin = td.clusters.keyMin.get
     val xmax = td.clusters.keyMax.get
