@@ -166,7 +166,7 @@ object TDigest {
    * (it may grow larger if data are not presented randomly).  The default corresponds to
    * an expected number of clusters of about 100.
    */
-  val deltaDefault = 0.5
+  val deltaDefault = (50.0 / 100.0) // delta * E[clusters] ~ 50
 
   /**
    * The t-digest algorithm will re-cluster itself whenever its number of clusters exceeds
@@ -175,7 +175,7 @@ object TDigest {
    * clusters will only trigger the corresponding re-clustering threshold when data are being
    * presented in a non-random order.
    */
-  val K = 500.0
+  val K = 10.0 * 50.0
 
   /**
    * Obtain an empty t-digest
