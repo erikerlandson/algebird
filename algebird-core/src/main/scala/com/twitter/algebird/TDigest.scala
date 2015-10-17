@@ -62,11 +62,11 @@ case class TDigest(
   }
 
   /**
-   * Combine this t-digest with another to form a merged sketch.
-   * @param that The t-digest to merge with
-   * @return a new digest that is formed from merging the arguments
+   * Combine this t-digest with another to form an aggregated sketch.
+   * @param that The t-digest to aggregate with
+   * @return a new digest that is formed from aggregating the arguments
    * @note This operation, combined with the empty digest, satisfy a Monoid law, with the caveat
-   * that merging involves random shuffling of clusters, and so the result is not deterministic.
+   * that it involves random shuffling of clusters, and so the result is not deterministic.
    */
   def ++(that: TDigest) = {
     val ds = scala.util.Random.shuffle(this.clusters.toVector ++ that.clusters.toVector)
