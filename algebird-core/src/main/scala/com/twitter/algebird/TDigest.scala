@@ -26,9 +26,11 @@ import tdmap.TDigestMap
  */
 case class TDigest(
   delta: Double,
-  recluster: Int,
   nclusters: Int,
   clusters: TDigestMap) {
+
+  // re-cluster when number of clusters exceeds this threshold
+  private val R = (TDigest.K / delta).toInt
 
   private case class Cluster(centroid: Double, mass: Double, massUB: Double)
 
@@ -51,11 +53,11 @@ case class TDigest(
    */
   def +[N1, N2](xw: (N1, N2))(implicit num1: Numeric[N1], num2: Numeric[N2]): TDigest = {
     val s = this.update(xw)
-    if (s.nclusters < recluster) s
+    if (s.nclusters <= R) s
     else {
       // too many clusters: attempt to compress it by re-clustering
       val ds = scala.util.Random.shuffle(s.clusters.toVector)
-      ds.foldLeft(TDigest.empty(delta, recluster))((d, e) => d.update(e))
+      ds.foldLeft(TDigest.empty(delta))((d, e) => d.update(e))
     }
   }
 
@@ -75,7 +77,7 @@ case class TDigest(
 
     if (near.isEmpty) {
       // our map is empty, so insert this pair as the first cluster
-      TDigest(delta, recluster, nclusters + 1, clusters + ((xn, wn)))
+      TDigest(delta, nclusters + 1, clusters + ((xn, wn)))
     } else {
       // compute upper bounds for cluster masses, from their quantile estimates
       var massPS = clusters.prefixSum(near.head._1, open = true)
@@ -120,7 +122,7 @@ case class TDigest(
       val nc = nclusters - s.length + cmNew.length
 
       // return the updated t-digest
-      TDigest(delta, recluster, nc, clustNew)
+      TDigest(delta, nc, clustNew)
     }
   }
 
@@ -146,22 +148,47 @@ object TDigest {
   import scala.language.reflectiveCalls
   import com.twitter.algebird.Monoid
 
-  /** return an empty t-digest */
-  def empty(
-    delta: Double = 0.5,
-    recluster: Int = 1000) = {
+  /**
+   * Default value for a t-digest delta parameter.  The number of clusters varies, roughly, as
+   * about (50/delta), when data are presented in random order
+   * (it may grow larger if data are not presented randomly).  The default corresponds to
+   * an expected number of clusters of about 100.
+   */
+  val deltaDefault = 0.5
+
+  /**
+   * The t-digest algorithm will re-cluster itself whenever its number of clusters exceeds
+   * (K/delta).  This value is set such that the threshold is about 10x the heuristically
+   * expected number of clusters for the user-specified delta value.  Generally the number of
+   * clusters will only trigger the corresponding re-clustering threshold when data are being
+   * presented in a non-random order.
+   */
+  val K = 500.0
+
+  /**
+   * Obtain an empty t-digest
+   * @param delta a sketch resolution parameter.
+   * @note Smaller values of delta yield sketches with more clusters, and higher resolution
+   * @note The expected number of clusters will vary (roughly) as (50/delta)
+   */
+  def empty(delta: Double = deltaDefault) = {
     require(delta > 0.0, s"delta was not > 0")
-    TDigest(delta, recluster, 0, TDigestMap.empty)
+    TDigest(delta, 0, TDigestMap.empty)
   }
 
-  /** return a t-digest constructed from some data */
+  /**
+   * Sketch some data with a t-digest
+   * @param data The data elements to sketch
+   * @param delta The sketch resolution parameter.
+   * @note Smaller values of delta yield sketches with more clusters, and higher resolution
+   * @note The expected number of clusters will vary (roughly) as (50/delta)
+   */
   def sketch[N](
     data: TraversableOnce[N],
-    delta: Double = 0.5,
-    recluster: Int = 1000)(implicit num: Numeric[N]) = {
+    delta: Double = deltaDefault)(implicit num: Numeric[N]) = {
     require(delta > 0.0, s"delta was not > 0")
-    val td = data.foldLeft(empty(delta, recluster))((c, e) => c + ((e, 1)))
+    val td = data.foldLeft(empty(delta))((c, e) => c + ((e, 1)))
     val ds = scala.util.Random.shuffle(td.clusters.toVector)
-    ds.foldLeft(empty(delta, recluster))((c, e) => c + e)
+    ds.foldLeft(empty(delta))((c, e) => c + e)
   }
 }
