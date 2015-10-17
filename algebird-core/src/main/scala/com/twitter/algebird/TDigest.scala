@@ -61,6 +61,18 @@ case class TDigest(
     }
   }
 
+  /**
+   * Combine this t-digest with another to form a merged sketch.
+   * @param that The t-digest to merge with
+   * @return a new digest that is formed from merging the arguments
+   * @note This operation, combined with the empty digest, satisfy a Monoid law, with the caveat
+   * that merging involves random shuffling of clusters, and so the result is not deterministic.
+   */
+  def ++(that: TDigest) = {
+    val ds = scala.util.Random.shuffle(this.clusters.toVector ++ that.clusters.toVector)
+    ds.foldLeft(TDigest.empty(this.delta))((d, e) => d + e)
+  }
+
   // This is most of 'algorithm 1', except for re-clustering which is factored out to avoid
   // recursive calls during a reclustering phase
   private def update[N1, N2](xw: (N1, N2))(implicit num1: Numeric[N1], num2: Numeric[N2]) = {
