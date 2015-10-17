@@ -85,4 +85,15 @@ class TDigestTest extends FlatSpec with Matchers {
 
     testTDvsDist(td1 ++ td2, dist, math.sqrt(dist.getNumericalVariance())) should be (true)
   }
+
+  it should "sketch data using TDigestAggregator" in {
+    import org.apache.commons.math3.distribution.NormalDistribution
+    val dist = new NormalDistribution()
+    dist.reseedRandomGenerator(seed)
+
+    val agg = TDigest.aggregator[Double](delta)
+    val td = agg(Iterator.fill(ss) { dist.sample })
+
+    testTDvsDist(td, dist, math.sqrt(dist.getNumericalVariance())) should be (true)
+  }
 }

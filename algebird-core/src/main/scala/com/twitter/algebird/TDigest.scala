@@ -68,10 +68,7 @@ case class TDigest(
    * @note This operation, combined with the empty digest, satisfy a Monoid law, with the caveat
    * that it involves random shuffling of clusters, and so the result is not deterministic.
    */
-  def ++(that: TDigest) = {
-    val ds = scala.util.Random.shuffle(this.clusters.toVector ++ that.clusters.toVector)
-    ds.foldLeft(TDigest.empty(this.delta))((d, e) => d + e)
-  }
+  def ++(that: TDigest) = TDigestMonoid.plus(this, that, this.delta)
 
   // This is most of 'algorithm 1', except for re-clustering which is factored out to avoid
   // recursive calls during a reclustering phase
@@ -229,10 +226,22 @@ object TDigest {
 class TDigestMonoid(delta: Double = TDigest.deltaDefault) extends Monoid[TDigest] {
   val zero = TDigest.empty(delta)
 
-  def plus(ltd: TDigest, rtd: TDigest) = {
-    // this is equivalent to ltd ++ rtd, but preserves the monoid delta
-    val ds = scala.util.Random.shuffle(ltd.clusters.toVector ++ rtd.clusters.toVector)
-    ds.foldLeft(TDigest.empty(delta))((d, e) => d + e)
+  def plus(ltd: TDigest, rtd: TDigest) = TDigestMonoid.plus(ltd, rtd, delta)
+}
+
+object TDigestMonoid {
+  def plus(ltd: TDigest, rtd: TDigest, delta: Double = TDigest.deltaDefault): TDigest = {
+    if (ltd.nclusters <= 1 && rtd.nclusters > 1) plus(rtd, ltd, delta)
+    else if (rtd.nclusters == 0) ltd
+    else if (rtd.nclusters == 1) {
+      // handle the singleton RHS case specially to prevent quadratic catastrophe when 
+      // it is being used in the Aggregator use case
+      val d = rtd.clusters.asInstanceOf[tdmap.tree.INodeTD].data
+      ltd + ((d.key, d.value))
+    } else {
+      val ds = scala.util.Random.shuffle(ltd.clusters.toVector ++ rtd.clusters.toVector)
+      ds.foldLeft(TDigest.empty(delta))((d, e) => d + e)
+    }
   }
 }
 
