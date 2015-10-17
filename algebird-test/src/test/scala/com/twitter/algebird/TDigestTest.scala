@@ -32,13 +32,7 @@ class TDigestTest extends FlatSpec with Matchers {
   val maxD = 0.05
   val maxDI = 0.05
 
-  def testDistribution(dist: RealDistribution, stdv: Double): Boolean = {
-    import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
-
-    dist.reseedRandomGenerator(seed)
-
-    val td = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
-
+  def testTDvsDist(td: TDigest, dist: RealDistribution, stdv: Double): Boolean = {
     val xmin = td.clusters.keyMin.get
     val xmax = td.clusters.keyMax.get
     val step = (xmax - xmin) / 1000
@@ -51,6 +45,16 @@ class TDigestTest extends FlatSpec with Matchers {
     val pass = d <= maxD && dInv <= maxDI
     if (!pass) println(s"d= $d  dInv= $dInv")
     pass
+  }
+
+  def testDistribution(dist: RealDistribution, stdv: Double): Boolean = {
+    import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
+
+    dist.reseedRandomGenerator(seed)
+
+    val td = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
+
+    testTDvsDist(td, dist, stdv)
   }
 
   it should "sketch a uniform distribution" in {
@@ -69,5 +73,16 @@ class TDigestTest extends FlatSpec with Matchers {
     import org.apache.commons.math3.distribution.ExponentialDistribution
     val dist = new ExponentialDistribution(1.0)
     testDistribution(dist, math.sqrt(dist.getNumericalVariance())) should be (true)
+  }
+
+  it should "aggregate with another t-digest using ++" in {
+    import org.apache.commons.math3.distribution.NormalDistribution
+    val dist = new NormalDistribution()
+    dist.reseedRandomGenerator(seed)
+
+    val td1 = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
+    val td2 = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
+
+    testTDvsDist(td1 ++ td2, dist, math.sqrt(dist.getNumericalVariance())) should be (true)
   }
 }
