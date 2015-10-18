@@ -20,6 +20,8 @@ import org.scalatest._
 
 import com.twitter.algebird.matchers.seq._
 
+case class Test(t: Int) extends Serializable
+
 class TDigestTest extends FlatSpec with Matchers {
   import org.apache.commons.math3.distribution.RealDistribution
 
@@ -56,7 +58,7 @@ class TDigestTest extends FlatSpec with Matchers {
 
     testTDvsDist(td, dist, stdv)
   }
-
+  /*
   it should "sketch a uniform distribution" in {
     import org.apache.commons.math3.distribution.UniformRealDistribution
     val dist = new UniformRealDistribution()
@@ -95,5 +97,39 @@ class TDigestTest extends FlatSpec with Matchers {
     val td = agg(Iterator.fill(ss) { dist.sample })
 
     testTDvsDist(td, dist, math.sqrt(dist.getNumericalVariance())) should be (true)
+  }
+*/
+  def roundTripSerDe[T](v: T) = {
+    import java.io._
+
+    class ObjectInputStreamWithCustomClassLoader(
+      inputStream: InputStream) extends ObjectInputStream(inputStream) {
+      override def resolveClass(desc: java.io.ObjectStreamClass): Class[_] = {
+        try { Class.forName(desc.getName, false, getClass.getClassLoader) }
+        catch { case ex: ClassNotFoundException => super.resolveClass(desc) }
+      }
+    }
+
+    val bufout = new ByteArrayOutputStream()
+    val obout = new ObjectOutputStream(bufout)
+
+    obout.writeObject(v)
+
+    val bufin = new ByteArrayInputStream(bufout.toByteArray)
+    val obin = new ObjectInputStreamWithCustomClassLoader(bufin)
+
+    obin.readObject().asInstanceOf[T]
+  }
+
+  it should "serialize and deserialize" in {
+    import org.apache.commons.math3.distribution.NormalDistribution
+    val dist = new NormalDistribution()
+    dist.reseedRandomGenerator(seed)
+
+    val tdo = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
+
+    val tdi = roundTripSerDe(tdo)
+
+    (tdi == tdo) should be (true)
   }
 }

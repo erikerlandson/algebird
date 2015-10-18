@@ -27,7 +27,7 @@ import tdmap.TDigestMap
 case class TDigest(
   delta: Double,
   nclusters: Int,
-  clusters: TDigestMap) {
+  clusters: TDigestMap) extends Serializable {
 
   // re-cluster when number of clusters exceeds this threshold
   private val R = (TDigest.K / delta).toInt

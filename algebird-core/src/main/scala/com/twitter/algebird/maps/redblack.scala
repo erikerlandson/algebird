@@ -20,12 +20,12 @@ import math.Ordering
 
 object tree {
   /** The color (red or black) of a node in a Red/Black tree */
-  sealed trait Color
+  sealed trait Color extends Serializable
   case object R extends Color
   case object B extends Color
 
   /** Defines the data payload of a tree node */
-  trait Data[K] {
+  trait Data[K] extends Serializable {
     /** The axiomatic unit of data for R/B trees is a key */
     val key: K
   }
@@ -34,7 +34,7 @@ object tree {
    * Base class of a Red/Black tree node
    * @tparam K The key type
    */
-  trait Node[K] {
+  trait Node[K] extends Serializable {
 
     /** The ordering that is applied to key values */
     val keyOrdering: Ordering[K]

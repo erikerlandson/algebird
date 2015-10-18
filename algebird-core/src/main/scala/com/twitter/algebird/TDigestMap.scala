@@ -87,7 +87,7 @@ object infra {
   import com.twitter.algebird.maps.ordered.tree.DataMap
 
   /** Dependency injection class for TDigestMap */
-  class Inject {
+  class Inject extends Serializable {
     // Typeclasses corresponding to "regular real numbers":
     val keyOrdering = implicitly[Numeric[Double]]
     val valueMonoid = implicitly[Monoid[Double]]
