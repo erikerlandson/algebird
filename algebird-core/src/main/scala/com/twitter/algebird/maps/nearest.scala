@@ -139,7 +139,7 @@ object tree {
 import tree._
 
 object infra {
-  class InjectSet[K](val keyOrdering: Numeric[K]) {
+  class InjectSet[K](val keyOrdering: Numeric[K]) extends Serializable {
     def iNode(clr: Color, dat: Data[K], ls: Node[K], rs: Node[K]) =
       new InjectSet[K](keyOrdering) with INodeNear[K] with NearestSet[K] {
         // INode
@@ -159,7 +159,7 @@ object infra {
       }
   }
 
-  class InjectMap[K, V](val keyOrdering: Numeric[K]) {
+  class InjectMap[K, V](val keyOrdering: Numeric[K]) extends Serializable {
     def iNode(clr: Color, dat: Data[K], ls: Node[K], rs: Node[K]) =
       new InjectMap[K, V](keyOrdering) with INodeNearMap[K, V] with NearestMap[K, V] {
         // INode

@@ -76,7 +76,8 @@ import tree._
 object infra {
   import com.twitter.algebird.maps.ordered.tree.DataMap
 
-  class Inject[K, V, P](val keyOrdering: Ordering[K], val prefixMonoid: IncrementingMonoid[P, V]) {
+  class Inject[K, V, P](val keyOrdering: Ordering[K], val prefixMonoid: IncrementingMonoid[P, V])
+    extends Serializable {
     def iNode(clr: Color, dat: Data[K], ls: Node[K], rs: Node[K]) =
       new Inject[K, V, P](keyOrdering, prefixMonoid) with INodePS[K, V, P] with PrefixSumMap[K, V, P] {
         // INode[K]

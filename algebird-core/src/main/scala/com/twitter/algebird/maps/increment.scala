@@ -82,7 +82,8 @@ object tree {
 import tree._
 
 object infra {
-  class Inject[K, V](val keyOrdering: Ordering[K], val valueMonoid: Monoid[V]) {
+  class Inject[K, V](val keyOrdering: Ordering[K], val valueMonoid: Monoid[V])
+    extends Serializable {
     def iNode(clr: Color, dat: Data[K], ls: Node[K], rs: Node[K]) =
       new Inject[K, V](keyOrdering, valueMonoid) with INodeInc[K, V] with IncrementMap[K, V] {
         // INode[K]
