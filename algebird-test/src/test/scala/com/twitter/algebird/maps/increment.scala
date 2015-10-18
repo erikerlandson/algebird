@@ -69,4 +69,18 @@ class IncrementMapSpec extends FlatSpec with Matchers {
       testIncrement(data, map)
     }
   }
+
+  it should "serialize and deserialize" in {
+    import com.twitter.algebird.SerDe.roundTripSerDe
+
+    val data = Vector.tabulate(50)(j => (j, j))
+    val omap = data.foldLeft(mapType1)((m, e) => m + e)
+    val imap = roundTripSerDe(omap)
+
+    (imap == omap) should be (true)
+    testRB(imap)
+    testKV(data, imap)
+    testDel(data, imap)
+    testIncrement(data, imap)
+  }
 }

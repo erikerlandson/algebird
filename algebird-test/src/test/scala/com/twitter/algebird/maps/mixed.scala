@@ -54,10 +54,11 @@ object mixed {
     class Inject[K, V, P](
       val keyOrdering: Numeric[K],
       val valueMonoid: Monoid[V],
-      val prefixMonoid: IncrementingMonoid[P, V]) {
+      val prefixMonoid: IncrementingMonoid[P, V]) extends Serializable {
 
       def iNode(clr: Color, dat: Data[K], ls: Node[K], rs: Node[K]) =
         new Inject[K, V, P](keyOrdering, valueMonoid, prefixMonoid) with INodeMix[K, V, P] with MixedMap[K, V, P] {
+
           // INode[K]
           val color = clr
           val lsub = ls.asInstanceOf[NodeMix[K, V, P]]
@@ -134,5 +135,21 @@ class MixedMapSpec extends FlatSpec with Matchers {
       testIncrement(data, map)
       testNearest(data, map)
     }
+  }
+
+  it should "serialize and deserialize" in {
+    import com.twitter.algebird.SerDe.roundTripSerDe
+
+    val data = Vector.tabulate(50)(j => (j.toDouble, j))
+    val omap = data.foldLeft(mapType1)((m, e) => m + e)
+    val imap = roundTripSerDe(omap)
+
+    (imap == omap) should be (true)
+    testRB(imap)
+    testKV(data, imap)
+    testDel(data, imap)
+    testPrefix(data, imap)
+    testIncrement(data, imap)
+    testNearest(data, imap)
   }
 }

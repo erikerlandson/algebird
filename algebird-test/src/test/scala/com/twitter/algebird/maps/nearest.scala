@@ -98,6 +98,20 @@ class NearestSetSpec extends FlatSpec with Matchers {
       testNearest(data, map)
     }
   }
+
+  it should "serialize and deserialize" in {
+    import com.twitter.algebird.SerDe.roundTripSerDe
+
+    val data = Vector.tabulate(50)(j => j.toDouble)
+    val omap = data.foldLeft(mapType1)((m, e) => m + e)
+    val imap = roundTripSerDe(omap)
+
+    (imap == omap) should be (true)
+    testRB(imap)
+    testK(data, imap)
+    testDel(data, imap)
+    testNearest(data, imap)
+  }
 }
 
 class NearestMapSpec extends FlatSpec with Matchers {
@@ -126,5 +140,19 @@ class NearestMapSpec extends FlatSpec with Matchers {
       testEq(data, mapType1)
       testNearest(data, map)
     }
+  }
+
+  it should "serialize and deserialize" in {
+    import com.twitter.algebird.SerDe.roundTripSerDe
+
+    val data = Vector.tabulate(50)(j => (j.toDouble, j))
+    val omap = data.foldLeft(mapType1)((m, e) => m + e)
+    val imap = roundTripSerDe(omap)
+
+    (imap == omap) should be (true)
+    testRB(imap)
+    testKV(data, imap)
+    testDel(data, imap)
+    testNearest(data, imap)
   }
 }

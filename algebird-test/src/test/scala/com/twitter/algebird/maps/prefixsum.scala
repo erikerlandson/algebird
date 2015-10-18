@@ -65,4 +65,18 @@ class PrefixSumMapSpec extends FlatSpec with Matchers {
       testPrefix(data, psmap)
     }
   }
+
+  it should "serialize and deserialize" in {
+    import com.twitter.algebird.SerDe.roundTripSerDe
+
+    val data = Vector.tabulate(50)(j => (j, j))
+    val omap = data.foldLeft(mapType1)((m, e) => m + e)
+    val imap = roundTripSerDe(omap)
+
+    (imap == omap) should be (true)
+    testRB(imap)
+    testKV(data, imap)
+    testDel(data, imap)
+    testPrefix(data, imap)
+  }
 }
