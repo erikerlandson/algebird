@@ -171,7 +171,9 @@ object AlgebirdBuild extends Build {
   ).dependsOn(algebirdCore)
 
   lazy val algebirdBenchmark = module("benchmark").settings(JmhPlugin.projectSettings:_*).settings(
-     libraryDependencies ++= Seq("com.twitter" %% "bijection-core" % "0.8.0")
+     libraryDependencies ++= Seq(
+       "com.twitter" %% "bijection-core" % "0.8.0",
+       "org.apache.commons" % "commons-math3" % "3.5")
   ).dependsOn(algebirdCore, algebirdUtil, algebirdTest % "test->compile").enablePlugins(JmhPlugin)
 
   lazy val algebirdUtil = module("util").settings(
