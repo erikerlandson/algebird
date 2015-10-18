@@ -118,6 +118,25 @@ object OrderedSetProperties extends FlatSpec with Matchers {
       testK(delData, delMap)
     }
   }
+
+  def testEq[K, IN <: INode[K], M <: OrderedSetLike[K, IN, M]](
+    data: Seq[K],
+    empty: OrderedSetLike[K, IN, M]) {
+
+    val map1 = scala.util.Random.shuffle(data).foldLeft(empty)((m, e) => m + e)
+    val map2 = scala.util.Random.shuffle(data).foldLeft(empty)((m, e) => m + e)
+
+    (map1 == map2) should be (true)
+
+    data.iterator.foreach { key =>
+      val map1d = map1 - key
+      val map2d = map2 - key
+      (map1d == map2) should be (false)
+      (map1 == map2d) should be (false)
+      ((map1d + key) == map2) should be (true)
+      (map1 == (map2d + key)) should be (true)
+    }
+  }
 }
 
 object OrderedMapProperties extends FlatSpec with Matchers {
@@ -148,6 +167,31 @@ object OrderedMapProperties extends FlatSpec with Matchers {
       val delData = data.filter(_._1 != key)
       testRB(delMap)
       testKV(delData, delMap)
+    }
+  }
+
+  def testEq[K, V, IN <: INodeMap[K, V], M <: OrderedMapLike[K, V, IN, M]](
+    data: Seq[(K, V)],
+    empty: OrderedMapLike[K, V, IN, M]) {
+
+    val map1 = scala.util.Random.shuffle(data).foldLeft(empty)((m, e) => m + e)
+    val map2 = scala.util.Random.shuffle(data).foldLeft(empty)((m, e) => m + e)
+
+    (map1 == map2) should be (true)
+
+    data.iterator.foreach { p =>
+      val (key, value) = p
+      val map1d = map1 - key
+      val map2d = map2 - key
+      (map1d == map2) should be (false)
+      (map1 == map2d) should be (false)
+      ((map1d + ((key, value))) == map2) should be (true)
+      (map1 == (map2d + ((key, value)))) should be (true)
+      val v = data.head._2
+      if (value != v) {
+        ((map1 + ((key, v))) == map2) should be (false)
+        (map1 == (map2 + ((key, v)))) should be (false)
+      }
     }
   }
 }
@@ -185,6 +229,7 @@ class OrderedSetSpec extends FlatSpec with Matchers {
       testRB(omap)
       testK(data, omap)
       testDel(data, omap)
+      testEq(data, mapType1)
     }
   }
 }
@@ -222,6 +267,7 @@ class OrderedMapSpec extends FlatSpec with Matchers {
       testRB(omap)
       testKV(data, omap)
       testDel(data, omap)
+      testEq(data, mapType1)
     }
   }
 }

@@ -129,6 +129,7 @@ class MixedMapSpec extends FlatSpec with Matchers {
       testRB(map)
       testKV(data, map)
       testDel(data, map)
+      testEq(data, mapType1)
       testPrefix(data, map)
       testIncrement(data, map)
       testNearest(data, map)

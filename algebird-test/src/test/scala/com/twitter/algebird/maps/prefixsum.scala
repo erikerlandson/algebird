@@ -61,6 +61,7 @@ class PrefixSumMapSpec extends FlatSpec with Matchers {
       testRB(psmap)
       testKV(data, psmap)
       testDel(data, psmap)
+      testEq(data, mapType1)
       testPrefix(data, psmap)
     }
   }

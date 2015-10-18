@@ -94,6 +94,7 @@ class NearestSetSpec extends FlatSpec with Matchers {
       testRB(map)
       testK(data, map)
       testDel(data, map)
+      testEq(data, mapType1)
       testNearest(data, map)
     }
   }
@@ -122,6 +123,7 @@ class NearestMapSpec extends FlatSpec with Matchers {
       testRB(map)
       testKV(data, map)
       testDel(data, map)
+      testEq(data, mapType1)
       testNearest(data, map)
     }
   }

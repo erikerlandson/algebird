@@ -65,6 +65,7 @@ class IncrementMapSpec extends FlatSpec with Matchers {
       testRB(map)
       testKV(data, map)
       testDel(data, map)
+      testEq(data, mapType1)
       testIncrement(data, map)
     }
   }
