@@ -58,7 +58,7 @@ class TDigestTest extends FlatSpec with Matchers {
 
     testTDvsDist(td, dist, stdv)
   }
-  /*
+
   it should "sketch a uniform distribution" in {
     import org.apache.commons.math3.distribution.UniformRealDistribution
     val dist = new UniformRealDistribution()
@@ -98,7 +98,7 @@ class TDigestTest extends FlatSpec with Matchers {
 
     testTDvsDist(td, dist, math.sqrt(dist.getNumericalVariance())) should be (true)
   }
-*/
+
   def roundTripSerDe[T](v: T) = {
     import java.io._
 
@@ -131,5 +131,7 @@ class TDigestTest extends FlatSpec with Matchers {
     val tdi = roundTripSerDe(tdo)
 
     (tdi == tdo) should be (true)
+
+    testTDvsDist(tdi, dist, math.sqrt(dist.getNumericalVariance())) should be (true)
   }
 }
