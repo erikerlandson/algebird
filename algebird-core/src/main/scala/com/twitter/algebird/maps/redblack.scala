@@ -28,6 +28,12 @@ object tree {
   trait Data[K] extends Serializable {
     /** The axiomatic unit of data for R/B trees is a key */
     val key: K
+
+    override def hashCode = key.hashCode
+    override def equals(that: Any) = that match {
+      case data: Data[K] => this.key.equals(data.key)
+      case _ => false
+    }
   }
 
   /**

@@ -24,6 +24,12 @@ object tree {
   /** Trees that back a map-like object have a value as well as a key */
   trait DataMap[K, V] extends Data[K] {
     val value: V
+
+    override def hashCode = key.hashCode + value.hashCode
+    override def equals(that: Any) = that match {
+      case data: DataMap[K, V] => this.key.equals(data.key) && this.value.equals(data.value)
+      case _ => false
+    }
   }
 
   /**
@@ -167,6 +173,12 @@ trait OrderedSetLike[K, IN <: INode[K], M <: OrderedSetLike[K, IN, M]]
 
   /** Iterator over keys, in key order */
   def iterator: Iterator[K] = nodesIterator.map(_.data.key)
+
+  override def hashCode = scala.util.hashing.MurmurHash3.orderedHash(nodesIterator.map(_.data))
+  override def equals(that: Any) = that match {
+    case coll: OrderedSetLike[K, IN, M] => coll.sameElements(this)
+    case _ => false
+  }
 }
 
 /**
@@ -198,6 +210,12 @@ trait OrderedMapLike[K, V, IN <: INodeMap[K, V], M <: OrderedMapLike[K, V, IN, M
 
   /** Iterator over values, in key order */
   def valuesIterator = nodesIterator.map(_.data.value)
+
+  override def hashCode = scala.util.hashing.MurmurHash3.orderedHash(nodesIterator.map(_.data))
+  override def equals(that: Any) = that match {
+    case coll: OrderedMapLike[K, V, IN, M] => coll.sameElements(this)
+    case _ => false
+  }
 }
 
 sealed trait OrderedSet[K] extends OrderedSetLike[K, INode[K], OrderedSet[K]] {
