@@ -32,7 +32,7 @@ class TDigestTest extends FlatSpec with Matchers {
   val delta = 50.0 / 1000
 
   val maxD = 0.05
-  val maxDI = 0.05
+  val maxDI = 0.1
 
   def testTDvsDist(td: TDigest, dist: RealDistribution, stdv: Double): Boolean = {
     val xmin = td.clusters.keyMin.get
@@ -45,13 +45,11 @@ class TDigestTest extends FlatSpec with Matchers {
       .map(x => math.abs(td.cdfInverse(x) - dist.inverseCumulativeProbability(x))).max / stdv
 
     val pass = d <= maxD && dInv <= maxDI
-    if (!pass) println(s"d= $d  dInv= $dInv")
+    if (!pass) Console.err.println(s"testTDvsDist failure: d= $d  dInv= $dInv")
     pass
   }
 
   def testDistribution(dist: RealDistribution, stdv: Double): Boolean = {
-    import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
-
     dist.reseedRandomGenerator(seed)
 
     val td = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
