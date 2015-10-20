@@ -65,10 +65,11 @@ case class TDigest(
    * Combine this t-digest with another to form an aggregated sketch.
    * @param that The t-digest to aggregate with
    * @return a new digest that is formed from aggregating the arguments
-   * @note This operation, combined with the empty digest, satisfy a Monoid law, with the caveat
-   * that it involves random shuffling of clusters, and so the result is not deterministic.
+   * @note This operation satisfies a Semigroup law, with the caveat
+   * that it is only "statistically" associative: d1 ++ (d2 ++ d3) will be statistically
+   * similar to (d1 ++ d2) ++ d3, but rarely identical.
    */
-  def ++(that: TDigest) = TDigestMonoid.plus(this, that, this.delta)
+  def ++(that: TDigest) = TDigestSemigroup.plus(this, that, this.delta)
 
   // This is most of 'algorithm 1', except for re-clustering which is factored out to avoid
   // recursive calls during a reclustering phase
@@ -155,7 +156,6 @@ case class TDigest(
 /** Factory functions for TDigest */
 object TDigest {
   import scala.language.reflectiveCalls
-  import com.twitter.algebird.Monoid
 
   /**
    * Default value for a t-digest delta parameter.  The number of clusters varies, roughly, as
@@ -202,11 +202,11 @@ object TDigest {
   }
 
   /**
-   * Obtain a TDigest monoid instance
+   * Obtain a TDigest semigroup instance
    * @param delta The TDigest sketch resolution parameter
-   * @return a TDigest monoid
+   * @return a TDigest semigroup
    */
-  def monoid(delta: Double = deltaDefault) = new TDigestMonoid(delta)
+  def semigroup = new TDigestSemigroup
 
   /**
    * Obtain a TDigest aggregator instance
@@ -222,14 +222,12 @@ object TDigest {
     TDigest(delta, 1, TDigestMap.empty + ((num.toDouble(x), 1.0)))
 }
 
-/** The Monoid type class for TDigest objects */
-class TDigestMonoid(delta: Double = TDigest.deltaDefault) extends Monoid[TDigest] {
-  val zero = TDigest.empty(delta)
-
-  def plus(ltd: TDigest, rtd: TDigest) = TDigestMonoid.plus(ltd, rtd, delta)
+/** The Semigroup type class for TDigest objects */
+class TDigestSemigroup extends Semigroup[TDigest] {
+  def plus(ltd: TDigest, rtd: TDigest) = TDigestSemigroup.plus(ltd, rtd, ltd.delta)
 }
 
-object TDigestMonoid {
+object TDigestSemigroup {
   def plus(ltd: TDigest, rtd: TDigest, delta: Double = TDigest.deltaDefault): TDigest = {
     if (ltd.nclusters <= 1 && rtd.nclusters > 1) plus(rtd, ltd, delta)
     else if (rtd.nclusters == 0) ltd
@@ -250,8 +248,8 @@ object TDigestMonoid {
  * @tparam N the expected type of numeric input data
  */
 class TDigestAggregator[N](delta: Double = TDigest.deltaDefault)(implicit num: Numeric[N])
-  extends MonoidAggregator[N, TDigest, TDigest] {
-  def monoid = TDigest.monoid(delta)
+  extends Aggregator[N, TDigest, TDigest] {
+  def semigroup = TDigest.semigroup
   def prepare(x: N) = TDigest.prepare(x, delta)
   def present(td: TDigest) = td
 }
