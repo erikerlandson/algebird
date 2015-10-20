@@ -41,8 +41,6 @@ object PrefixSumMapProperties extends FlatSpec with Matchers {
 }
 
 class PrefixSumMapSpec extends FlatSpec with Matchers {
-  import scala.language.reflectiveCalls
-
   import com.twitter.algebird.maps.ordered.RBProperties._
   import com.twitter.algebird.maps.ordered.OrderedMapProperties._
 

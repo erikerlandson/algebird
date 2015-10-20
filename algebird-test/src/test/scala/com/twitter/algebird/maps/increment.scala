@@ -46,8 +46,6 @@ object IncrementMapProperties extends FlatSpec with Matchers {
 }
 
 class IncrementMapSpec extends FlatSpec with Matchers {
-  import scala.language.reflectiveCalls
-
   import com.twitter.algebird.maps.ordered.RBProperties._
   import com.twitter.algebird.maps.ordered.OrderedMapProperties._
 

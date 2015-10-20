@@ -153,8 +153,6 @@ case class TDigest(
 
 /** Factory functions for TDigest */
 object TDigest {
-  import scala.language.reflectiveCalls
-
   /**
    * Default value for a t-digest delta parameter.  The number of clusters varies, roughly, as
    * about (50/delta), when data are presented in random order

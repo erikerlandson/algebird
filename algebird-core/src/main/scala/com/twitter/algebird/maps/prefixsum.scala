@@ -141,7 +141,6 @@ object PrefixSumMap {
   /**
    * Instantiate a new empty PrefixSumMap from key, value and prefix types
    * {{{
-   * import scala.language.reflectiveCalls
    * import com.twitter.algebird.maps.prefixsum._
    *
    * // map strings to integers, using default ordering and standard integer monoid
@@ -151,8 +150,16 @@ object PrefixSumMap {
    * val map2 = PrefixSumMap.key(ord).value[Int].prefix(IncrementingMonoid.fromMonoid[Int])
    * }}}
    */
-  def key[K](implicit ord: Ordering[K]) = new AnyRef {
-    def value[V] = new AnyRef {
+  def key[K](implicit ord: Ordering[K]) = infra.GetValue(ord)
+
+  object infra {
+    /** Mediating class between key method and value method */
+    case class GetValue[K](ord: Ordering[K]) {
+      def value[V] = GetPrefix[K, V](ord)
+    }
+
+    /** Mediating class between value method and prefix method */
+    case class GetPrefix[K, V](ord: Ordering[K]) {
       def prefix[P](implicit mon: IncrementingMonoid[P, V]): PrefixSumMap[K, V, P] =
         new Inject[K, V, P](ord, mon) with LNodePS[K, V, P] with PrefixSumMap[K, V, P]
     }
@@ -196,7 +203,6 @@ object IncrementingMonoid {
   /**
    * Create an incrementing monoid from zero, plus and inc
    * {{{
-   * import scala.language.reflectiveCalls
    * IncrementingMonoid.zero(0).plus(_ + _).inc(_ + _)
    * IncrementingMonoid.zero(Set.empty[Int].plus(_ ++ _).inc[Int](_ + _)
    * }}}

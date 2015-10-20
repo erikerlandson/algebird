@@ -197,8 +197,6 @@ object OrderedMapProperties extends FlatSpec with Matchers {
 }
 
 class OrderedSetSpec extends FlatSpec with Matchers {
-  import scala.language.reflectiveCalls
-
   import RBProperties._
   import OrderedSetProperties._
 
@@ -248,8 +246,6 @@ class OrderedSetSpec extends FlatSpec with Matchers {
 }
 
 class OrderedMapSpec extends FlatSpec with Matchers {
-  import scala.language.reflectiveCalls
-
   import RBProperties._
   import OrderedMapProperties._
 

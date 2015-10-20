@@ -235,7 +235,6 @@ object OrderedSet {
   /**
    * Instantiate a new empty OrderedSet from key and value types
    * {{{
-   * import scala.language.reflectiveCalls
    * import com.twitter.algebird.maps.ordered._
    *
    * // map strings to integers, using default string ordering
@@ -253,7 +252,6 @@ object OrderedMap {
   /**
    * Instantiate a new empty OrderedMap from key and value types
    * {{{
-   * import scala.language.reflectiveCalls
    * import com.twitter.algebird.maps.ordered._
    *
    * // map strings to integers, using default string ordering
@@ -263,8 +261,13 @@ object OrderedMap {
    * val map2 = OrderedMap.key(ord).value[Int]
    * }}}
    */
-  def key[K](implicit ord: Ordering[K]) = new AnyRef {
-    def value[V]: OrderedMap[K, V] =
-      new InjectMap[K, V](ord) with LNodeMap[K, V] with OrderedMap[K, V]
+  def key[K](implicit ord: Ordering[K]) = infra.GetValue(ord)
+
+  object infra {
+    /** Mediating class between key method and value method */
+    case class GetValue[K](ord: Ordering[K]) {
+      def value[V]: OrderedMap[K, V] =
+        new InjectMap[K, V](ord) with LNodeMap[K, V] with OrderedMap[K, V]
+    }
   }
 }

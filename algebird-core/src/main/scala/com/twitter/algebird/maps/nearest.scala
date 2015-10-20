@@ -280,7 +280,6 @@ object NearestSet {
   /**
    * Instantiate a new empty NearestSet
    * {{{
-   * import scala.language.reflectiveCalls
    * import com.twitter.algebird.maps.nearest._
    *
    * // set of integers, using default Numeric[Int]
@@ -290,14 +289,14 @@ object NearestSet {
    * val map2 = NearestSet.key(num)
    * }}}
    */
-  def key[K](implicit num: Numeric[K]): NearestSet[K] = new InjectSet[K](num) with LNodeNear[K] with NearestSet[K]
+  def key[K](implicit num: Numeric[K]): NearestSet[K] =
+    new InjectSet[K](num) with LNodeNear[K] with NearestSet[K]
 }
 
 object NearestMap {
   /**
    * Instantiate a new empty NearestMap from key and value types
    * {{{
-   * import scala.language.reflectiveCalls
    * import com.twitter.algebird.maps.nearest._
    *
    * // map integers to strings, using default Numeric[Int]
@@ -307,8 +306,13 @@ object NearestMap {
    * val map2 = NearestMap.key(num).value[String]
    * }}}
    */
-  def key[K](implicit num: Numeric[K]) = new AnyRef {
-    def value[V]: NearestMap[K, V] =
-      new InjectMap[K, V](num) with LNodeNearMap[K, V] with NearestMap[K, V]
+  def key[K](implicit num: Numeric[K]) = infra.GetValue(num)
+
+  object infra {
+    /** Mediating class between key method and value method */
+    case class GetValue[K](num: Numeric[K]) {
+      def value[V]: NearestMap[K, V] =
+        new InjectMap[K, V](num) with LNodeNearMap[K, V] with NearestMap[K, V]
+    }
   }
 }

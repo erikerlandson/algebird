@@ -95,8 +95,14 @@ object mixed {
   }
 
   object MixedMap {
-    def key[K](implicit num: Numeric[K]) = new AnyRef {
-      def value[V](implicit vm: Monoid[V]) = new AnyRef {
+    def key[K](implicit num: Numeric[K]) = infra.GetValue(num)
+
+    object infra {
+      case class GetValue[K](num: Numeric[K]) {
+        def value[V](implicit vm: Monoid[V]) = GetPrefix(num, vm)
+      }
+
+      case class GetPrefix[K, V](num: Numeric[K], vm: Monoid[V]) {
         def prefix[P](implicit im: IncrementingMonoid[P, V]): MixedMap[K, V, P] =
           new Inject[K, V, P](num, vm, im) with LNodeMix[K, V, P] with MixedMap[K, V, P]
       }
@@ -105,8 +111,6 @@ object mixed {
 }
 
 class MixedMapSpec extends FlatSpec with Matchers {
-  import scala.language.reflectiveCalls
-
   import com.twitter.algebird.maps.prefixsum.IncrementingMonoid
 
   import com.twitter.algebird.maps.ordered.RBProperties._

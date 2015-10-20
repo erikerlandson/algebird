@@ -129,7 +129,6 @@ object IncrementMap {
   /**
    * Instantiate a new empty IncrementMap from key and value types
    * {{{
-   * import scala.language.reflectiveCalls
    * import com.twitter.algebird.maps.increment._
    *
    * // map strings to integers, using default string ordering and default value monoid
@@ -142,8 +141,13 @@ object IncrementMap {
    * val map2 = IncrementMap.key[String].value(mon)
    * }}}
    */
-  def key[K](implicit ord: Ordering[K]) = new AnyRef {
-    def value[V](implicit mon: Monoid[V]): IncrementMap[K, V] =
-      new Inject[K, V](ord, mon) with LNodeInc[K, V] with IncrementMap[K, V]
+  def key[K](implicit ord: Ordering[K]) = infra.GetValue(ord)
+
+  object infra {
+    /** Mediating class between key method and value method */
+    case class GetValue[K](ord: Ordering[K]) {
+      def value[V](implicit mon: Monoid[V]): IncrementMap[K, V] =
+        new Inject[K, V](ord, mon) with LNodeInc[K, V] with IncrementMap[K, V]
+    }
   }
 }
