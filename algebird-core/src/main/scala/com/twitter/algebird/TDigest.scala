@@ -62,14 +62,12 @@ case class TDigest(
   }
 
   /**
-   * Combine this t-digest with another to form an aggregated sketch.
-   * @param that The t-digest to aggregate with
-   * @return a new digest that is formed from aggregating the arguments
-   * @note This operation satisfies a Semigroup law, with the caveat
-   * that it is only "statistically" associative: d1 ++ (d2 ++ d3) will be statistically
-   * similar to (d1 ++ d2) ++ d3, but rarely identical.
+   * Add this digest to another
+   * @param that The right-hand t-digest operand
+   * @return the sum of left and right digests, as defined by TDigestSemigroup
+   * @see TDigestSemigroup
    */
-  def ++(that: TDigest) = TDigestSemigroup.plus(this, that, this.delta)
+  def ++(that: TDigest): TDigest = TDigestSemigroup.plus(this, that, this.delta)
 
   // This is most of 'algorithm 1', except for re-clustering which is factored out to avoid
   // recursive calls during a reclustering phase
@@ -142,7 +140,7 @@ case class TDigest(
    * @param x a numeric value
    * @return the cumulative probability that a random sample from the distribution is <= x
    */
-  def cdf[N](x: N)(implicit num: Numeric[N]) = clusters.cdf(x)
+  def cdf[N](x: N)(implicit num: Numeric[N]): Double = clusters.cdf(x)
 
   /**
    * Compute the inverse cumulative probability (inverse-CDF) for a quantile value, from the
@@ -150,7 +148,7 @@ case class TDigest(
    * @param q a quantile value.  The value of q is expected to be on interval [0, 1]
    * @return the value x such that cdf(x) = q
    */
-  def cdfInverse[N](q: N)(implicit num: Numeric[N]) = clusters.cdfInverse(q)
+  def cdfInverse[N](q: N)(implicit num: Numeric[N]): Double = clusters.cdfInverse(q)
 }
 
 /** Factory functions for TDigest */
@@ -163,7 +161,7 @@ object TDigest {
    * (it may grow larger if data are not presented randomly).  The default corresponds to
    * an expected number of clusters of about 100.
    */
-  val deltaDefault = (50.0 / 100.0) // delta * E[clusters] ~ 50
+  val deltaDefault: Double = (50.0 / 100.0) // delta * E[clusters] ~ 50
 
   /**
    * The t-digest algorithm will re-cluster itself whenever its number of clusters exceeds
@@ -172,7 +170,7 @@ object TDigest {
    * clusters will only trigger the corresponding re-clustering threshold when data are being
    * presented in a non-random order.
    */
-  val K = 10.0 * 50.0
+  val K: Double = 10.0 * 50.0
 
   /**
    * Obtain an empty t-digest
@@ -180,7 +178,7 @@ object TDigest {
    * @note Smaller values of delta yield sketches with more clusters, and higher resolution
    * @note The expected number of clusters will vary (roughly) as (50/delta)
    */
-  def empty(delta: Double = deltaDefault) = {
+  def empty(delta: Double = deltaDefault): TDigest = {
     require(delta > 0.0, s"delta was not > 0")
     TDigest(delta, 0, TDigestMap.empty)
   }
@@ -189,12 +187,13 @@ object TDigest {
    * Sketch some data with a t-digest
    * @param data The data elements to sketch
    * @param delta The sketch resolution parameter.
+   * @return A t-digest sketch of the input data
    * @note Smaller values of delta yield sketches with more clusters, and higher resolution
    * @note The expected number of clusters will vary (roughly) as (50/delta)
    */
   def sketch[N](
     data: TraversableOnce[N],
-    delta: Double = deltaDefault)(implicit num: Numeric[N]) = {
+    delta: Double = deltaDefault)(implicit num: Numeric[N]): TDigest = {
     require(delta > 0.0, s"delta was not > 0")
     val td = data.foldLeft(empty(delta))((c, e) => c + ((e, 1)))
     val ds = scala.util.Random.shuffle(td.clusters.toVector)
@@ -206,7 +205,7 @@ object TDigest {
    * @param delta The TDigest sketch resolution parameter
    * @return a TDigest semigroup
    */
-  def semigroup = new TDigestSemigroup
+  def semigroup: TDigestSemigroup = new TDigestSemigroup
 
   /**
    * Obtain a TDigest aggregator instance
@@ -214,7 +213,7 @@ object TDigest {
    * @param delta The TDigest sketch resolution parameter
    * @return a TDigest aggregator
    */
-  def aggregator[N](delta: Double = deltaDefault)(implicit num: Numeric[N]) =
+  def aggregator[N](delta: Double = deltaDefault)(implicit num: Numeric[N]): TDigestAggregator[N] =
     new TDigestAggregator[N](delta)
 
   /** Try to add a bit of efficiency to wasteful construction of t-digest objects for each input */
@@ -224,7 +223,16 @@ object TDigest {
 
 /** The Semigroup type class for TDigest objects */
 class TDigestSemigroup extends Semigroup[TDigest] {
-  def plus(ltd: TDigest, rtd: TDigest) = TDigestSemigroup.plus(ltd, rtd, ltd.delta)
+  /**
+   * Add two t-digests to yield a new aggregated digest
+   * @param ltd the left-hand t-digest operand
+   * @param rtd the right hand t-digest
+   * @return the sum of left and right digests, defined as their aggregation
+   * @note This operation satisfies a Semigroup law, with the caveat
+   * that it is only "statistically" associative: d1++(d2++d3) will be statistically
+   * similar to (d1++d2)++d3, but rarely identical.
+   */
+  def plus(ltd: TDigest, rtd: TDigest): TDigest = TDigestSemigroup.plus(ltd, rtd, ltd.delta)
 }
 
 object TDigestSemigroup {
@@ -246,9 +254,11 @@ object TDigestSemigroup {
 /**
  * Aggregator subclass for sketching data using TDigest
  * @tparam N the expected type of numeric input data
+ * @param delta the sketch resolution parameter
  */
 class TDigestAggregator[N](delta: Double = TDigest.deltaDefault)(implicit num: Numeric[N])
   extends Aggregator[N, TDigest, TDigest] {
+  require(delta > 0.0, s"delta was not > 0")
   def semigroup = TDigest.semigroup
   def prepare(x: N) = TDigest.prepare(x, delta)
   def present(td: TDigest) = td
