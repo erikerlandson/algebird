@@ -47,6 +47,17 @@ object Aggregator extends java.io.Serializable {
     def present(reduction: T) = reduction
   }
 
+  def updateMonoid[F, T](update: (T, F) => T)(implicit m: Monoid[T]): MonoidAggregator[F, T, T] =
+    updateMonoid(update, identity[T]_)(m)
+
+  def updateMonoid[F, T, P](update: (T, F) => T, pres: T => P)(implicit m: Monoid[T]): MonoidAggregator[F, T, P] =
+    new MonoidAggregator[F, T, P] {
+      def monoid = m
+      def prepare(input: F) = update(m.zero, input)
+      def present(reduction: T) = pres(reduction)
+      override def apply(inputs: TraversableOnce[F]) = present(inputs.aggregate(m.zero)(update, m.plus))
+    }
+
   /**
    * How many items satisfy a predicate
    */
